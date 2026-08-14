@@ -1,10 +1,10 @@
 import streamlit as st
 import math
 
-st.set_page_config(page_title="DeepPlan – Asystent Nurkowy", page_icon="🤿", layout="centered")
+st.set_page_config(page_title="DeepPlan Pro – Inteligentny Asystent", page_icon="🤿", layout="centered")
 
-st.title("🤿 DeepPlan")
-st.subheader("Twój osobisty asystent planowania i bezpieczeństwa")
+st.title("🤿 DeepPlan Pro")
+st.subheader("Automatyczny planer profili i rezerw dekompresyjnych")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry"])
@@ -19,27 +19,26 @@ with tab1:
     with col2:
         typ_gazu = st.radio("Rodzaj gazu:", ["Powietrze", "Nitrox"], horizontal=True)
 
-    if typ_gazu == "Nitrox":
-        nitrox_procent = st.slider("Zawartość tlenu (% O₂):", 21, 40, 32)
-        fo2 = nitrox_procent / 100
-    else:
-        fo2 = 0.21
+    fo2 = st.slider("Zawartość tlenu (% O₂):", 21, 40, 32) / 100 if typ_gazu == "Nitrox" else 0.21
 
     st.write("---")
-    st.markdown("### Krok 2: Profil Nurkowania")
-    glebokosc = st.number_input("Planowana głębokość (metry):", min_value=1, max_value=50, value=30, step=1)
-    
-    ma_deco = st.checkbox("Planuję wejść w dekompresję (Deco Stop)")
-    czas_deco = st.number_input("Czas przystanków dekompresyjnych (min):", 1, 60, 5) if ma_deco else 0
+    st.markdown("### Krok 2: Profil Planowanego Nurkowania")
+    col_prof1, col_prof2 = st.columns(2)
+    with col_prof1: glebokosc = st.number_input("Planowana głębokość (metry):", 1, 50, 30, step=1)
+    with col_prof2: czas_na_dnie = st.number_input("Planowany czas na dnie (minuty):", 1, 90, 15, step=1)
+
+    if glebokosc <= 10: lim_ndl = 120
+    elif glebokosc <= 30: lim_ndl = 20
+    else: lim_ndl = 5
+
+    if czas_na_dnie > lim_ndl:
+        czas_deco = math.ceil((czas_na_dnie - lim_ndl) * 1.5)
+        jest_w_deco = True
+    else:
+        czas_deco = 0
+        jest_w_deco = False
 
     cisnienie_startowe = 200
-    ppo2_limit = 1.4
-    mod_metry = (ppo2_limit / fo2 - 1) * 10
-    
-    if glebokosc <= 10: ndl_tekst = "Brak limitu (100+ min)"
-    elif glebokosc <= 30: ndl_tekst = "ok. 20 min"
-    else: ndl_tekst = "Poniżej 5 min!"
-
     gestosc_na_dnie = 1.29 * ((glebokosc / 10) + 1)
 
 with tab2:
@@ -64,7 +63,7 @@ rock_bottom_bar = math.ceil((calkowity_gaz_litry / pojemnosc_butli) / 10) * 10
 dostepny_gaz_bar = cisnienie_startowe - rock_bottom_bar
 
 st.write("---")
-st.markdown("### 📊 Raport Bezpieczeństwa:")
+st.markdown("### 📊 Raport Bezpieczeństwa Profilu:")
 res_col1, res_col2 = st.columns(2)
 res_col1.metric("🚨 ROCK BOTTOM", f"{rock_bottom_bar} BAR")
 res_col2.metric("🟢 GAZ NA FAZĘ DENNĄ", f"{dostepny_gaz_bar} BAR" if dostepny_gaz_bar > 0 else "BRAK")
