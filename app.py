@@ -27,6 +27,11 @@ st.markdown("""
 """)
 st.write("---")
 
+# --- PARAMETR GLOBALNY (Przeniesiony na górę dla stabilności kodu) ---
+st.markdown("### 🔬 Twoje Parametry Fizjologiczne")
+sac_indywidualne = st.slider("Twoje standardowe zużycie powierzchniowe (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
+st.write("---")
+
 # --- GLOBALNA LISTA BUTLI DO WYBORU ---
 opcje_butli = {
     "7 L (Stage)": 7,
@@ -38,22 +43,15 @@ opcje_butli = {
     "2x12 L (Twins)": 24
 }
 
-# Poprawna, ustalona kolejność trzech zakładek
-tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry", "⏱️ Szybki Limit Czasowy"])
-
-# ==========================================
-# ZAKŁADKA 2: ZAAWANSOWANE PARAMETRY
-# ==========================================
-with tab2:
-    st.markdown("### Dostosuj parametry fizjologiczne")
-    sac_indywidualne = st.slider("Twoje standardowe zużycie (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
-
 # Stałe założenia fizyczne
 cisnienie_startowe = 200
 ppo2_limit = 1.6
 p_przystanek = (6 / 10) + 1
 p_powierzchnia = 1.0
+sac_awaryjne = sac_indywidualne * 2
 
+# Podział na dwie główne, niezawodne zakładki robocze
+tab1, tab2 = st.tabs(["📋 Planowanie Nurkowania", "⏱️ Szybki Limit Czasowy"])
 
 # ==========================================
 # ZAKŁADKA 1: PLANOWANIE NURKOWANIA
@@ -62,10 +60,10 @@ with tab1:
     st.markdown("### Krok 1: Twój Sprzęt i Gaz")
     col1, col2 = st.columns(2)
     with col1:
-        wybrana_butla_t1 = st.selectbox("Pojemność butli (Tab 1):", list(opcje_butli.keys()), index=3, key="butla_t1")
+        wybrana_butla_t1 = st.selectbox("Pojemność butli (Planowanie):", list(opcje_butli.keys()), index=3, key="butla_t1")
         pojemnosc_butli_t1 = opcje_butli[wybrana_butla_t1]
     with col2:
-        typ_gazu_t1 = st.radio("Rodzaj gazu (Tab 1):", ["Powietrze", "Nitrox"], horizontal=True, key="gas_t1")
+        typ_gazu_t1 = st.radio("Rodzaj gazu (Planowanie):", ["Powietrze", "Nitrox"], horizontal=True, key="gas_t1")
 
     if typ_gazu_t1 == "Nitrox":
         nitrox_procent_t1 = st.slider("Zawartość tlenu (% O₂):", min_value=21, max_value=40, value=32, step=1, key="nitrox_t1")
@@ -94,12 +92,10 @@ with tab1:
     
     # Przeliczenie kosztu samego zanurzenia na bary
     zuzycie_zanurzenia_bar_t1 = math.ceil(gaz_zan_t1 / pojemnosc_butli_t1)
-    
     zuzycie_denne_bar_t1 = math.ceil((gaz_zan_t1 + gaz_dno_t1) / pojemnosc_butli_t1)
     gaz_pozostaly_bar_t1 = cisnienie_startowe - zuzycie_denne_bar_t1
 
     # Obliczenia Rock Bottom (Tab 1)
-    sac_awaryjne = sac_indywidualne * 2
     gaz_stres_t1 = 2 * sac_awaryjne * p_dno_t1
     gaz_wyn1_t1 = ((glebokosc_t1 - 6) / 9) * sac_awaryjne * ((p_dno_t1 + p_przystanek) / 2) if glebokosc_t1 > 6 else 0
     gaz_przystanek_t1 = 3 * sac_awaryjne * p_przystanek
@@ -107,17 +103,18 @@ with tab1:
     
     total_awaryjny_litry_t1 = gaz_stres_t1 + gaz_wyn1_t1 + gaz_przystanek_t1 + gaz_wyn2_t1
     rock_bottom_bar_t1 = math.ceil(((total_awaryjny_litry_t1 / pojemnosc_butli_t1) + 15) / 10) * 10
+    rock_bottom_litry_t1 = rock_bottom_bar_t1 * pojemnosc_butli_t1
 
-    # Wyniki Tab 1 (Zoptymalizowany podział na 3 kolumny z gazem na zanurzenie)
+    # Wyniki Tab 1 (Trzy kolumny z gazem na zanurzenie)
     st.write("---")
     st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
     r_col1, r_col2, r_col3 = st.columns(3)
     with r_col1:
-        st.metric(label="⏹️ WYMAGANY ROCK BOTTOM", value=f"{rock_bottom_bar_t1} BAR")
+        st.metric(label="⏹️ WYMAGANY ROCK BOTTOM", value=f"{rock_bottom_bar_t1} BAR", delta=f"{round(rock_bottom_litry_t1)} litrów")
     with r_col2:
         st.metric(label="📉 SAMO ZANURZENIE (Koszt)", value=f"{zuzycie_zanurzenia_bar_t1} BAR", delta=f"{round(gaz_zan_t1)} litrów", delta_color="inverse")
     with r_col3:
-        st.metric(label="📉 MANOMETR PO DNIE", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR")
+        st.metric(label="📉 MANOMETR PO DNIE", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR", delta=f"Zużyto: {zuzycie_denne_bar_t1} bar")
 
     # Łagodne, partnerskie ostrzeżenia
     if glebokosc_t1 > mod_t1:
@@ -129,18 +126,18 @@ with tab1:
 
 
 # ==========================================
-# ZAKŁADKA 3: SZYBKI LIMIT CZASOWY
+# ZAKŁADKA 2: SZYBKI LIMIT CZASOWY
 # ==========================================
-with tab3:
+with tab2:
     st.markdown("### ⏱️ Automatyczne Wyliczanie Bezpiecznego Czasu")
     st.write("Wpisz parametry, a maszyna od razu powie Ci, na ile minut starczy Ci gazu przed wejściem na rezerwę.")
     
     col_t2_1, col_t2_2 = st.columns(2)
     with col_t2_1:
-        wybrana_butla_t2 = st.selectbox("Pojemność butli (Tab 2):", list(opcje_butli.keys()), index=3, key="butla_t2")
+        wybrana_butla_t2 = st.selectbox("Pojemność butli (Limit czasowy):", list(opcje_butli.keys()), index=3, key="butla_t2")
         pojemnosc_butli_t2 = opcje_butli[wybrana_butla_t2]
     with col_t2_2:
-        typ_gazu_t2 = st.radio("Rodzaj gazu (Tab 2):", ["Powietrze", "Nitrox"], horizontal=True, key="gas_t2")
+        typ_gazu_t2 = st.radio("Rodzaj gazu (Limit czasowy):", ["Powietrze", "Nitrox"], horizontal=True, key="gas_t2")
 
     if typ_gazu_t2 == "Nitrox":
         nitrox_procent_t2 = st.slider("Zawartość tlenu (% O₂):", min_value=21, max_value=40, value=32, step=1, key="nitrox_t2")
