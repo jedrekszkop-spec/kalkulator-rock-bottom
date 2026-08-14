@@ -9,7 +9,8 @@ st.write("---")
 
 st.markdown("""
 ### 🧠 Czym jest Rock Bottom?
-**Rock Bottom (Żelazna Rezerwa)** to krytyczne ciśnienie w butli, przy którym należy natychmiast rozpocząć wspólne wynurzanie z partnerem oddychającym z Twojego zapasowego automatu w sytuacjach awaryjnych.
+**Rock Bottom (Żelazna Rezerwa)** to krytyczne ciśnienie w butli, przy którym należy natychmiast rozpocząć wspólne wynurzanie z partnerem. 
+*Algorytm Ski Way wylicza tę wartość tak, aby po przejściu całej procedury awaryjnej i wyjściu na powierzchnię, w Twojej butli zostało jeszcze bezpieczne **50 barów rezerwy końcowej (górki)**.*
 """)
 st.write("---")
 
@@ -20,7 +21,7 @@ with tab1:
     col1, col2 = st.columns(2)
     with col1:
         opcje_butli = {"7 L": 7, "10 L": 10, "12 L": 12, "15 L": 15, "18 L": 18, "2x10 L": 20, "2x12 L": 24}
-        wybrana_butla_tekst = st.selectbox("Pojemność butli:", list(opcje_butli.keys()), index=3)
+        wybrana_butla_tekst = st.selectbox("Pojemność bulti:", list(opcje_butli.keys()), index=3)
         pojemnosc_butli = opcje_butli[wybrana_butla_tekst]
     with col2:
         typ_gazu = st.radio("Rodzaj gazu:", ["Powietrze", "Nitrox"], horizontal=True)
@@ -46,7 +47,7 @@ p_dno = (glebokosc / 10) + 1
 p_przystanek = (6 / 10) + 1
 p_powierzchnia = 1.0
 
-# Obliczenia profilu solo
+# Zużycie normalne
 gaz_norm_zanurzenie = (glebokosc / 15) * sac_indywidualne * ((p_powierzchnia + p_dno) / 2)
 gaz_norm_dno = czas_na_dnie * sac_indywidualne * p_dno
 gaz_norm_wyn_glebokie = (((glebokosc - 6) / 9) * sac_indywidualne * ((p_dno + p_przystanek) / 2)) if glebokosc > 6 else 0
@@ -55,17 +56,20 @@ gaz_norm_wyn_plytkie = 2 * sac_indywidualne * ((p_przystanek + p_powierzchnia) /
 suma_normalne_litry = gaz_norm_zanurzenie + gaz_norm_dno + gaz_norm_wyn_glebokie + gaz_norm_przystanek + gaz_norm_wyn_plytkie
 normalne_zuzycie_bar = math.ceil(suma_normalne_litry / pojemnosc_butli)
 
-# Obliczenia Rock Bottom
+# Zużycie awaryjne z górką 50 bar
 sac_awaryjne = sac_indywidualne * 2
-gaz_faza_stres = 2 * sac_awaryjne * p_dno
-gaz_faza_wynurzanie_glebokie = (((glebokosc - 6) / 9) * sac_awaryjne * ((p_dno + p_przystanek) / 2)) if glebokosc > 6 else 0
-gaz_faza_przystanek = 3 * sac_awaryjne * p_przystanek
-gaz_faza_wynurzanie_plytkie = 2 * sac_awaryjne * ((p_przystanek + p_powierzchnia) / 2)
-calkowity_gaz_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
-rock_bottom_bar = math.ceil((calkowity_gaz_litry / pojemnosc_butli) / 10) * 10
+g_stres = 2 * sac_awaryjne * p_dno
+g_wyn1 = (((glebokosc - 6) / 9) * sac_awaryjne * ((p_dno + p_przystanek) / 2)) if glebokosc > 6 else 0
+g_przystanek = 3 * sac_awaryjne * p_przystanek
+g_wyn2 = 2 * sac_awaryjne * ((p_przystanek + p_powierzchnia) / 2)
+calkowity_gaz_awaryjny_litry = g_stres + g_wyn1 + g_przystanek + g_wyn2
+czysty_powrot_bar = calkowity_gaz_awaryjny_litry / pojemnosc_butli
+
+rock_bottom_bar = math.ceil((czysty_powrot_bar + 50) / 10) * 10
+rock_bottom_litry = rock_bottom_bar * pojemnosc_butli
 
 st.write("---")
-st.markdown("### 📊 Wynik Analizy Obciążeń Gazowych:")
+st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
 res_col1, res_col2 = st.columns(2)
-res_col1.metric("🚨 ŻELAZNA REZERWA (ROCK BOTTOM)", f"{rock_bottom_bar} BAR")
-res_col2.metric("📉 PLANOWANE ZUŻYCIE GAZU (SOLO)", f"{normalne_zuzycie_bar} BAR")
+res_col1.metric("⏹️ GRANICA POWROTU (Rock Bottom)", f"{rock_bottom_bar} BAR", f"{round(rock_bottom_litry)} litrów")
+res_col2.metric("⏱️ ZUŻYCIE PLANOWANE (Profil solo)", f"{normalne_zuzycie_bar} BAR", f"{round(suma_normalne_litry)} litrów")
