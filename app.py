@@ -175,3 +175,4 @@ with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego (Rock 
     **Razem objętość potrzebnego gazu awaryjnego:** {round(calkowity_gaz_litry)} litrów. 
     Dzieląc to przez Twoją butlę {pojemnosc_butli}L i zaokrąglając dla bezpieczeństwa w górę, otrzymujemy właśnie żelazne **{rock_bottom_bar} bar**.
     """)
+    
