@@ -94,7 +94,7 @@ with tab1:
     zuzycie_denne_bar_t1 = math.ceil((gaz_zan_t1 + gaz_dno_t1) / pojemnosc_butli_t1)
     gaz_pozostaly_bar_t1 = cisnienie_startowe - zuzycie_denne_bar_t1
 
-    # Obliczenia Rock Bottom
+    # Obliczenia Rock Bottom (FAZY 1, 2, 3, 4 SZYFROWANE MATEMATYCZNIE W TLE)
     gaz_stres_t1 = 2 * sac_awaryjne * p_dno_t1
     gaz_wyn1_t1 = ((glebokosc_t1 - 6) / 9) * sac_awaryjne * ((p_dno_t1 + p_przystanek) / 2) if glebokosc_t1 > 6 else 0
     gaz_przystanek_t1 = 3 * sac_awaryjne * p_przystanek
@@ -188,7 +188,7 @@ with tab2:
         st.success(f"👉 **Wytyczne Ski Way:** Na głębokości {glebokosc_t2}m możesz spędzić maksymalnie **{maks_czas_t2} minut**. Po tym czasie Twój manometr osiągnie {rock_bottom_bar_t2} bar i musisz wracać.")
 
 # ==========================================
-# SZCZEGÓŁOWA ANATOMIA NA SAMYM DOLE STRONY
+# SZCZEGÓŁOWA ANATOMIA NA SAMYM DOLE STRONY (ZAKTUALIZOWANE DYNAMICZNE OPISY!)
 # ==========================================
 st.write("---")
 st.markdown("### 🔍 Szczegółowe Rozbicie Litrów (Dla aktywnego profilu z Zakładki 1):")
@@ -203,4 +203,3 @@ with st.expander("Zobacz anatomię CAŁEGO nurkowania (Planowany profil solo):")
 with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Bottom):"):
     st.markdown(f"""
     *   **Faza 1 (Stres na dnie):** {round(gaz_stres_t1)} litrów *(2 minuty)*
-    *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_wyn1_t1)} litrów *(Prędkość 9 m/min)*
