@@ -6,10 +6,20 @@ st.set_page_config(page_title="Ski Way Diving Machine", page_icon="🤿", layout
 
 # Nagłówek aplikacji
 st.title("🤿 Ski Way Diving Machine")
-st.subheader("Automatyczny planer profili, rezerw i limitów czasowych")
+st.subheader("Profesjonalny kalkulator żelaznej rezerwy gazowej")
 st.write("---")
 
-# Podział na zakładki
+# --- NOWOŚĆ: SEKCJA EDUKACYJNA NA GÓRZE STRONY ---
+st.markdown("""
+### 🧠 Czym jest Rock Bottom?
+**Rock Bottom** (Żelazna Rezerwa) to minimalne ciśnienie w butli, przy którym **musisz bezwzględnie rozpocząć wynurzanie**. 
+Jest to ilość gazu obliczona na wypadek **najczarniejszego scenariusza**: Twój partner traci cały gaz na maksymalnej głębokości, przechodzi na Twój zapasowy automat i w stanie dużego stresu (podwyższone zużycie gazu) bezpiecznie, wspólnie wynurzacie się na powierzchnię, wykonując po drodze przystanek bezpieczeństwa. 
+
+*Pamiętaj: Rock Bottom nie jest gazem na wydłużenie nurkowania – to Twoja polisa na życie!*
+""")
+st.write("---")
+
+# Podział na zakładki (Krok 1 i Zaawansowane zostają bez zmian)
 tab1, tab2 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry"])
 
 with tab1:
@@ -40,35 +50,10 @@ with tab1:
         fo2 = 0.21
 
     st.write("---")
-    st.markdown("### Krok 2: Profil Planowanego Nurkowania")
+    st.markdown("### Krok 2: Głębokość docelowa")
     
-    col_prof1, col_prof2 = st.columns(2)
-    with col_prof1:
-        glebokosc = st.number_input("Planowana głębokość (metry):", min_value=1, max_value=50, value=30, step=1)
-    with col_prof2:
-        # Ten czas służy teraz do sprawdzenia dekompresji
-        czas_na_dnie = st.number_input("Twój planowany czas na dnie (minuty):", min_value=1, max_value=90, value=15, step=1)
-
-    # --- BAZA DANYCH NDL ---
-    if glebokosc <= 10: lim_ndl = 120
-    elif glebokosc <= 12: lim_ndl = 100
-    elif glebokosc <= 15: lim_ndl = 75
-    elif glebokosc <= 18: lim_ndl = 50
-    elif glebokosc <= 22: lim_ndl = 35
-    elif glebokosc <= 25: lim_ndl = 25
-    elif glebokosc <= 30: lim_ndl = 20
-    elif glebokosc <= 35: lim_ndl = 14
-    elif glebokosc <= 40: lim_ndl = 9
-    else: lim_ndl = 5
-
-    # --- INTELIGENTNE I AUTOMATYCZNE PRZYPISYWANIE CZASU DEKOMPRESJI (Deco Stop) ---
-    if czas_na_dnie > lim_ndl:
-        minuty_przekroczenia = czas_na_dnie - lim_ndl
-        czas_deco = math.ceil(minuty_przekroczenia * 1.5)
-        jest_w_deco = True
-    else:
-        czas_deco = 0
-        jest_w_deco = False
+    # Teraz pytamy tylko o głębokość - czysto i przejrzyście
+    glebokosc = st.number_input("Wpisz planowaną głębokość nurkowania (metry):", min_value=1, max_value=50, value=30, step=1)
 
     cisnienie_startowe = 200
     gestosc_na_dnie = 1.29 * ((glebokosc / 10) + 1)
@@ -80,15 +65,16 @@ with tab2:
     
     mod_metry = (ppo2_custom / fo2 - 1) * 10
 
-# --- SILNIK OBLICZENIOWY ROCK BOTTOM ---
+# --- SILNIK OBLICZENIOWY ROCK BOTTOM (Dla dwóch osób w stresie) ---
 sac_awaryjne = sac_indywidualne * 2
 p_dno = (glebokosc / 10) + 1
 p_przystanek = (6 / 10) + 1
 p_powierzchnia = 1.0
 
-# Obliczanie fazowe litrów awaryjnych
+# 1. Stres na dnie (2 minuty)
 gaz_faza_stres = 2 * sac_awaryjne * p_dno
 
+# 2. Wynurzenie z dna do strefy przystanków na 6m (prędkość 9 m/min)
 if glebokosc > 6:
     dystans_faza1 = glebokosc - 6
     czas_faza1 = dystans_faza1 / 9
@@ -97,78 +83,53 @@ if glebokosc > 6:
 else:
     gaz_faza_wynurzanie_glebokie = 0
 
-calkowity_czas_na_6m = 3 + czas_deco
-gaz_faza_przystanek = calkowity_czas_na_6m * sac_awaryjne * p_przystanek
+# 3. Przystanek bezpieczeństwa na 6m (standardowe 3 minuty)
+gaz_faza_przystanek = 3 * sac_awaryjne * p_przystanek
 
+# 4. Wolne wynurzenie z 6m na powierzchnię (prędkość 3 m/min = 2 minuty)
 czas_faza2 = 6 / 3
 p_sr_faza2 = (p_przystanek + p_powierzchnia) / 2
-gaz_faza_wynurzanie_plytkie = time_faza2 = 6 / 3
 gaz_faza_wynurzanie_plytkie = czas_faza2 * sac_awaryjne * p_sr_faza2
 
-# Suma rezerwy Rock Bottom
+# Suma litrów rezerwowych i przeliczenie na Bary (zaokrąglenie w górę do pełnych 10 bar)
 calkowity_gaz_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
 rock_bottom_bar = math.ceil((calkowity_gaz_litry / pojemnosc_butli) / 10) * 10
 dostepny_gaz_bar = cisnienie_startowe - rock_bottom_bar
 
-# --- NOWOŚĆ: OBLICZENIA MAKSYMALNEGO CZASU DENNEGO I TURN PRESSURE ---
-# Zużycie litrów na minutę na dnie w normalnych warunkach (tylko Ty, bez stresu)
-zuzycie_denne_litry_min = sac_indywidualne * p_dno
-zuzycie_denne_bar_min = zuzycie_denne_litry_min / pojemnosc_butli
-
-if dostepny_gaz_bar > 0:
-    # Maksymalny czas jaki fizycznie nurek może spędzić na dnie do osiągnięcia Rock Bottom
-    maks_czas_na_dnie_fizyczny = dostepny_gaz_bar / zuzycie_denne_bar_min
-    maks_czas_na_dnie = math.floor(maks_czas_na_dnie_fizyczny)
-else:
-    maks_czas_na_dnie = 0
-
-# Obliczanie realnego zużycia gazu dla wpisanego przez użytkownika planowanego czasu
-planowane_zuzycie_bar = math.ceil(czas_na_dnie * zuzycie_denne_bar_min)
-turn_pressure_bar = cisnienie_startowe - planowane_zuzycie_bar
-
-# Jeśli planowany czas przekracza fizyczne możliwości butli, momentem odwrotu staje się po prostu Rock Bottom
-if turn_pressure_bar < rock_bottom_bar:
-    turn_pressure_bar = rock_bottom_bar
-
-
-# --- SEKCJA WYNIKÓW I RAPORTU ---
+# --- WYŚWIETLANIE WYNIKÓW (Proste i Przejrzyste) ---
 st.write("---")
-st.markdown("### 📊 Raport Bezpieczeństwa Profilu:")
+st.markdown("### 📊 Wynik Analizy Obciążeń Gazowych:")
 
-# Wizualne karty główne (Zaktualizowane o instrukcje taktyczne!)
 res_col1, res_col2 = st.columns(2)
 with res_col1:
-    st.metric(label="🚨 BEZWZGLĘDNY ROCK BOTTOM", value=f"{rock_bottom_bar} BAR")
+    st.metric(label="🚨 ŻELAZNA REZERWA (ROCK BOTTOM)", value=f"{rock_bottom_bar} BAR")
 with res_col2:
-    st.metric(label="⏱️ MAKSYMALNY CZAS NA DNIE", value=f"{maks_czas_na_dnie} MIN")
+    if dostepny_gaz_bar > 0:
+        st.metric(label="🟢 GAZ DOSTĘPNY NA FAZĘ DENNĄ", value=f"{dostepny_gaz_bar} BAR")
+    else:
+        st.metric(label="❌ GAZ DOSTĘPNY NA FAZĘ DENNĄ", value="BRAK")
 
-# NOWA SEKCJA: INSTRUKCJA TAKTYCZNA DLA NURKA
-st.markdown("### 📝 Wytyczne do planu nurkowego (Wetnotes):")
-st.success(f"📈 **Gaz dostępny na fazę denną:** {dostepny_gaz_bar} BAR (tyle możesz bezpiecznie wyoddychać przed powrotem).")
-
-if turn_pressure_bar == rock_bottom_bar:
-    st.error(f"📉 **MOMENT ODWRROTU (TURN PRESSURE): {turn_pressure_bar} BAR**. Twoje planowane nurkowanie zużywa cały dostępny gaz. Kończysz nurkowanie dokładnie w momencie wejścia na Rock Bottom!")
-else:
-    st.info(f"📉 **MOMENT ODWRROTU (TURN PRESSURE): {turn_pressure_bar} BAR**. Gdy Twój manometr wskaże tę wartość (lub minie {czas_na_dnie} min), zasygnalizuj partnerowi odwrót i skierujcie się do wyjścia.")
-
-# --- DYNAMICZNE POWIADOMIENIA I ALERTS ---
-st.write("---")
+# Alerty bezpieczeństwa pod spodem wyników
 if glebokosc > mod_metry:
-    st.error(f"☠️ **KRYTYCZNE ZAGROŻENIE!** Planowana głębokość ({glebokosc}m) przekracza MOD ({mod_metry:.1f}m). Ryzyko toksyczności tlenowej!")
-elif jest_w_deco:
-    st.warning(f"⚠️ **NURKOWANIE DEKOMPRESYJNE!** Przekroczłeś limit NDL. Maszyna Ski Way automatycznie dopisała **{czas_deco} min dekompresji**.")
+    st.error(f"☠️ **KRYTYCZNE ZAGROŻENIE!** Planowana głębokość ({glebokosc}m) przekracza MOD ({mod_metry:.1f}m) dla Twojego gazu! Ryzyko toksyczności tlenowej!")
+elif dostepny_gaz_bar <= 0:
+    st.error(f"🚨 **PLAN NIEBEZPIECZNY!** Wybrana butla ({pojemnosc_butli}L) jest za mała. Sam powrót awaryjny z głębokości {glebokosc}m wymaga więcej gazu niż mieści butla 200 bar!")
 else:
-    st.info(f"ℹ️ Nurkowanie bezdekompresyjne. Maksymalny czas bez deko (NDL) na tej głębokości to: {lim_ndl} min.")
+    st.success(f"✅ Wchodząc do wody z butlą napełnioną do 200 bar, możesz zużyć maksymalnie **{dostepny_gaz_bar} bar**. Gdy manometr pokaże **{rock_bottom_bar} bar**, musicie natychmiast wracać!")
 
-if dostepny_gaz_bar <= 0:
-    st.error("🚨 **BŁĄD PLANOWANIA:** Brak gazu na powrót awaryjny! Zmień butlę na większą.")
+if gestosc_na_dnie > 5.2 and glebokosc <= mod_metry:
+    st.warning(f"💨 **Gęstość gazu na dnie:** {gestosc_na_dnie:.1f} g/l (Norma bezpieczeństwa to 5.2). Pamiętaj, że oddychanie na tej głębokości będzie stawiało większy opór.")
 
-# Ukryte szczegóły
-with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego:"):
-    st.write(f"*   **Zużycie gazu na dnie w normalnych warunkach:** {zuzycie_denne_bar_min:.1f} BAR / minutę")
-    st.write(f"*   **Planowane zużycie gazu przez {czas_na_dnie} min:** {planowane_zuzycie_bar} BAR")
-    st.write(f"*   **Automatycznie przypisany czas Deco:** {czas_deco} minut")
-    st.write(f"**Rozkład zużycia awaryjnego (dwie osoby):**")
-    st.write(f"- Stres na dnie: {round(gaz_faza_stres)} litrów")
-    st.write(f"- Droga w górę do 6m: {round(gaz_faza_wynurzanie_glebokie)} litrów")
-    st.write(f"- Pobyt na 6m: {round(gaz_faza_przystanek)} litrów")
+# --- SEKCJA CIEKAWOSTKI (ANATOMIA POWROTU) ---
+st.write(" ")
+with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego (Ciekawostka):"):
+    st.markdown(f"""
+    Oto dokładne wyliczenie, ile litrów gazu ucieka z Twojej butli sekunda po sekundzie, gdy oddychasz razem z partnerem w stresie (łączny wydatek zespołu: **{sac_awaryjne} l/min**):
+    *   **Faza 1 (Stres na dnie):** {round(gaz_faza_stres)} litrów *(Czas: 2 minuty na opanowanie paniki i podanie automatu na głębokości {glebokosc}m)*
+    *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_faza_wynurzanie_glebokie)} litrów *(Czas wynurzania: {((glebokosc-6)/9):.1f} min z prędkością bezpieczną 9 m/min)*
+    *   **Faza 3 (Przystanek na 6m):** {round(gaz_faza_przystanek)} litrów *(Czas: 3 minuty na rekreacyjny przystanek bezpieczeństwa)*
+    *   **Faza 4 (Wynurzenie z 6m do powierzchni):** {round(gaz_faza_wynurzanie_plytkie)} litrów *(Czas: 2 minuty bardzo powolnego kontrolowanego wynurzania)*
+    
+    **Razem objętość potrzebnego gazu:** {round(calkowity_gaz_litry)} litrów. 
+    Dzieląc to przez Twoją butlę {pojemnosc_butli}L i zaokrąglając dla bezpieczeństwa w górę, otrzymujemy właśnie równe **{rock_bottom_bar} bar**.
+    """)
