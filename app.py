@@ -13,7 +13,7 @@ st.write("---")
 st.markdown("""
 ### 🧠 Czym jest Rock Bottom?
 **Rock Bottom (Żelazna Rezerwa)** to krytyczne ciśnienie w butli, przy którym należy natychmiast rozpocząć wspólne wynurzanie z partnerem. 
-*Algorytm Ski Way wylicza tę wartość tak, aby po przejściu całej procedury awaryjnej i wyjściu na powierzchnię, w Twojej butli zostało jeszcze bezpieczne **50 barów rezerwy końcowej (górki)**.*
+*Algorytm Ski Way wylicza tę wartość tak, aby po przejściu całej procedury awaryjnej i wyjściu na powierzchnię, w Twojej butli zostało jeszcze **minimum 15 barów rezerwy technicznej**, niezbędnej do swobodnego wzięcia oddechu.*
 """)
 st.write("---")
 
@@ -40,12 +40,21 @@ with tab1:
     with col2:
         typ_gazu = st.radio("Rodzaj gazu:", ["Powietrze", "Nitrox"], horizontal=True)
 
-    # Dynamiczny suwak dla Nitroxu
+    # Dynamiczny suwak dla Nitroxu (Wybór od 21% do 40%)
     if typ_gazu == "Nitrox":
         nitrox_procent = st.slider("Zawartość tlenu (% O₂):", min_value=21, max_value=40, value=32, step=1)
         fo2 = nitrox_procent / 100
     else:
         fo2 = 0.21
+
+    # --- FUNKCJA MOD (Maksymalna Głębokość Operacyjna) ---
+    ppo2_limit = 1.4
+    mod_metry = (ppo2_limit / fo2 - 1) * 10
+
+    if typ_gazu == "Zwykłe powietrze" or typ_gazu == "Powietrze":
+        st.info(f"✨ Gaz: **Powietrze**. Maksymalna Głębokość Operacyjna (MOD) ze względu na tlen ($PPO_2$=1.4): **{mod_metry:.1f} m**.")
+    else:
+        st.info(f"✨ Gaz: **Nitrox {int(fo2*100)}**. Maksymalna Głębokość Operacyjna (MOD) wynosi: **{mod_metry:.1f} m** (przy $PPO_2$ = 1.4).")
 
     st.write("---")
     st.markdown("### Krok 2: Profil Planowanego Nurkowania")
@@ -64,6 +73,7 @@ with tab2:
     sac_indywidualne = st.slider("Twoje standardowe zużycie (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
     ppo2_custom = st.slider("Limit ciśnienia parcjalnego tlenu (PPO₂):", min_value=1.2, max_value=1.6, value=1.4, step=0.1)
     
+    # Przeliczenie MOD na podstawie customowego suwaka PPO2
     mod_metry = (ppo2_custom / fo2 - 1) * 10
 
 # --- MATEMATYKA FIZYCZNA PROFILU NURKOWANIA ---
@@ -113,8 +123,8 @@ gaz_faza_wynurzanie_plytkie = 2 * sac_awaryjne * p_sr_faza2
 calkowity_gaz_awaryjny_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
 czysty_powrot_bar = calkowity_gaz_awaryjny_litry / pojemnosc_butli
 
-# NOWA LOGIKA: Rock Bottom = Czysty powrót + 50 bar rezerwy na powierzchni (zaokrąglone w górę do pełnych 10 bar)
-rock_bottom_bar = math.ceil((czysty_powrot_bar + 50) / 10) * 10
+# ZMODYFIKOWANA LOGIKA: Rock Bottom = Czysty powrót + ZAOŁOŻENIE 15 BAR na powierzchni (zaokrąglone w górę do pełnych 10 bar)
+rock_bottom_bar = math.ceil((czysty_powrot_bar + 15) / 10) * 10
 rock_bottom_litry = rock_bottom_bar * pojemnosc_butli
 
 calkowity_wymagany_gaz_bar = normalne_zuzycie_bar + rock_bottom_bar
@@ -132,13 +142,13 @@ with res_col1:
 with res_col2:
     st.metric(label="⏱️ ZUŻYCIE PLANOWANE (Twoja faza)", value=f"{normalne_zuzycie_bar} BAR", delta=f"{round(suma_normalne_litry)} litrów")
 
-# Wytyczne i alerty dla nurka
+# Wytyczne i alerty dla nurka (Zintegrowane z funkcją MOD)
 if glebokosc > mod_metry:
-    st.error(f"❌ **ZAKAZ NURKOWANIA:** Przekroczono bezpieczną głębokość tlenową MOD ({mod_metry:.1f} m)!")
+    st.error(f"❌ **ZAKAZ NURKOWANIA (ALARM MOD):** Planowana głębokość ({glebokosc}m) przekracza maksymalną bezpieczną granicę operacyjną ({mod_metry:.1f} m) dla tej mieszanki gazowej!")
 elif calkowity_wymagany_gaz_bar > cisnienie_startowe:
-    st.error(f"❌ **ZAKAZ NURKOWANIA:** Twój plan przekracza fizyczną pojemność butli 200 bar przy zachowaniu rezerwy końcowej!")
+    st.error(f"❌ **ZAKAZ NURKOWANIA:** Twój plan przekracza fizyczną pojemność butli 200 bar!")
 else:
-    st.success(f"👉 **Wytyczne:** Wchodzisz z 200 bar. Gdy Twój manometr wskaże **{rock_bottom_bar} bar** – natychmiast wracasz na powierzchnię. Po udanym wynurzeniu z partnerem, w butli zostanie Ci jeszcze przepisowe **ok. 50-60 barów** rezerwy (górki).")
+    st.success(f"👉 **Wytyczne:** Wchodzisz z 200 bar. Gdy Twój manometr wskaże **{rock_bottom_bar} bar** – natychmiast wracasz na powierzchnię. Po przejściu całej procedury awaryjnej z partnerem, na powierzchni manometr pokaże bezpieczne **minimum 15 barów** pozwalające na swobodny oddech.")
 
 if gestosc_na_dnie > 5.2 and glebokosc <= mod_metry:
     st.warning(f"⚠️ **Uwaga:** Gęstość gazu wynosi {gestosc_na_dnie:.1f} g/l. Spodziewaj się nieco większego oporu na automacie.")
@@ -165,9 +175,8 @@ with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego (Rock 
     *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_faza_wynurzanie_glebokie)} litrów *(Czas wynurzania: {((glebokosc-6)/9):.1f} min przy prędkości 9 m/min)*
     *   **Faza 3 (Przystanek na 6m):** {round(gaz_faza_przystanek)} litrów *(Czas: 3 minuty przystanku bezpieczeństwa dla dwóch osób)*
     *   **Faza 4 (Wynurzenie z 6m do powierzchni):** {round(gaz_faza_wynurzanie_plytkie)} litrów *(Czas: 2 minuty bardzo powolnego kontrolowanego wynurzania)*
-    *   🛡️ **Nienaruszalna rezerwa końcowa (Górka):** {round(50 * pojemnosc_butli)} litrów *(Zawsze równe **50 barów**, które MUSZĄ zostać w Twojej butli po wynurzeniu)*
+    *   🛡️ **Techniczna rezerwa końcowa:** {round(15 * pojemnosc_butli)} litrów *(Zawsze równe **15 barów**, które gwarantują prawidłową pracę automatyki oddechowej na powierzchni)*
     
-    **Łącznie zabezpieczony gaz awaryjny:** {round(calkowity_gaz_awaryjny_litry + (50 * pojemnosc_butli))} litrów. 
+    **Łącznie zabezpieczony gaz awaryjny:** {round(calkowity_gaz_awaryjny_litry + (15 * pojemnosc_butli))} litrów. 
     Dzieląc to przez Twoją butlę {pojemnosc_butli}L i zaokrąglając dla bezpieczeństwa w górę, otrzymujemy właśnie bezpieczne **{rock_bottom_bar} bar**.
     """)
-
