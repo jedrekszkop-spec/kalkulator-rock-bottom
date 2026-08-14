@@ -71,15 +71,12 @@ p_przystanek = (6 / 10) + 1
 p_powierzchnia = 1.0
 
 # --- 1. OBLICZENIA DLA NORMALNEGO SCENARIUSZA (ZUŻYCIE INDYWIDUALNE) ---
-# Zanurzenie: prędkość ok. 15 m/min. Średnie ciśnienie to średnia z powierzchni i dna.
 czas_zanurzenia = glebokosc / 15
 p_sr_zanurzenia = (p_powierzchnia + p_dno) / 2
 gaz_norm_zanurzenie = czas_zanurzenia * sac_indywidualne * p_sr_zanurzenia
 
-# Faza denna: planowany czas na dnie przy maksymalnym ciśnieniu
 gaz_norm_dno = czas_na_dnie * sac_indywidualne * p_dno
 
-# Wynurzenie normalne do 6m (prędkość 9 m/min)
 if glebokosc > 6:
     czas_wyn_norm1 = (glebokosc - 6) / 9
     p_sr_wyn_norm1 = (p_dno + p_przystanek) / 2
@@ -87,21 +84,16 @@ if glebokosc > 6:
 else:
     gaz_norm_wyn_glebokie = 0
 
-# Przystanek bezpieczeństwa solo (3 min na 6m)
 gaz_norm_przystanek = 3 * sac_indywidualne * p_przystanek
-
-# Końcówka z 6m do powierzchni (2 min)
 p_sr_wyn_norm2 = (p_przystanek + p_powierzchnia) / 2
 gaz_norm_wyn_plytkie = 2 * sac_indywidualne * p_sr_wyn_norm2
 
-# Suma planowanego normalnego zużycia gazu w litrach i barach
 suma_normalne_litry = gaz_norm_zanurzenie + gaz_norm_dno + gaz_norm_wyn_glebokie + gaz_norm_przystanek + gaz_norm_wyn_plytkie
 normalne_zuzycie_bar = math.ceil(suma_normalne_litry / pojemnosc_butli)
 
 
-# --- 2. OBLICZENIA DLA SCENARIUSZA AWARYJNEGO (ROCK BOTTOM - DWIE OSOBY W STRESIE) ---
+# --- 2. OBLICZENIA DLA SCENARIUSZA AWARYJNEGO (ROCK BOTTOM) ---
 sac_awaryjne = sac_indywidualne * 2
-
 gaz_faza_stres = 2 * sac_awaryjne * p_dno
 
 if glebokosc > 6:
@@ -113,42 +105,40 @@ else:
     gaz_faza_wynurzanie_glebokie = 0
 
 gaz_faza_przystanek = 3 * sac_awaryjne * p_przystanek
-
 p_sr_faza2 = (p_przystanek + p_powierzchnia) / 2
 gaz_faza_wynurzanie_plytkie = 2 * sac_awaryjne * p_sr_faza2
 
 calkowity_gaz_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
 rock_bottom_bar = math.ceil((calkowity_gaz_litry / pojemnosc_butli) / 10) * 10
 
-
-# --- KOŃCOWA WERYFIKACJA POJEMNOŚCI BALANSU GAZOWEGO ---
-# Całkowity gaz potrzebny na zrealizowanie planu i zachowanie Rock Bottom
 calkowity_wymagany_gaz_bar = normalne_zuzycie_bar + rock_bottom_bar
 pozostale_cisnienie_wyjsciowe = cisnienie_startowe - normalne_zuzycie_bar
 
-# --- WYŚWIETLANIE WYNIKÓW ---
-st.write("---")
-st.markdown("### 📊 Wynik Analizy Obciążeń Gazowych:")
 
+# --- 🔘 NOWA SEKCA WYNIKÓW: KONSOLA STERUJĄCA SKI WAY ---
+st.write("---")
+st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
+
+# Nowe, prostsze nazwy w kafelkach wynikowych
 res_col1, res_col2 = st.columns(2)
 with res_col1:
-    st.metric(label="🚨 ŻELAZNA REZERWA (ROCK BOTTOM)", value=f"{rock_bottom_bar} BAR")
+    st.metric(label="⏹️ GRANICA POWROTU (Górny limit awaryjny)", value=f"{rock_bottom_bar} BAR")
 with res_col2:
-    st.metric(label="📉 PLANOWANE ZUŻYCIE GAZU (SOLO)", value=f"{normalne_zuzycie_bar} BAR")
+    st.metric(label="⏱️ ZUŻYCIE PLANOWANE (Twoja faza)", value=f"{normalne_zuzycie_bar} BAR")
 
-# Komunikaty bezpieczeństwa i podsumowania taktyczne
+# Czyste, żołnierskie instrukcje zamiast nudnych komunikatów
 if glebokosc > mod_metry:
-    st.error(f"☠️ **KRYTYCZNE ZAGROŻENIE!** Planowana głębokość ({glebokosc}m) przekracza MOD ({mod_metry:.1f}m). Ryzyko toksyczności tlenowej!")
+    st.error(f"❌ **ZAKAZ NURKOWANIA:** Przekroczono bezpieczną głębokość tlenową MOD ({mod_metry:.1f} m)!")
 elif calkowity_wymagany_gaz_bar > cisnienie_startowe:
-    st.error(f"🚨 **PLAN NIEBEZPIECZNY!** Łącznie na nurkowanie i rezerwę potrzebujesz {calkowity_wymagany_gaz_bar} bar. W butli 200 bar ZABRAKNIE GAZU! Skróć czas lub weź większą butlę.")
+    st.error(f"❌ **ZAKAZ NURKOWANIA:** Twój plan przekracza fizyczną pojemność butli 200 bar!")
 else:
-    st.success(f"✅ Plan bezpieczny. Jeśli nurkowanie przebiegnie bezawaryjnie, wyjdziesz z wody mając na manometrze około **{pozostale_cisnienie_wyjsciowe} bar**.")
+    st.success(f"👉 **Wytyczne:** Wchodzisz z 200 bar. Twoje planowane zużycie to {normalne_zuzycie_bar} bar. Jeśli na manometrze zobaczysz **{rock_bottom_bar} bar** – natychmiast wracasz na powierzchnię razem z partnerem.")
 
 if gestosc_na_dnie > 5.2 and glebokosc <= mod_metry:
-    st.warning(f"💨 **Gęstość gazu na dnie:** {gestosc_na_dnie:.1f} g/l. Oddychanie będzie stawiało większy opór.")
+    st.warning(f"⚠️ **Uwaga:** Gęstość gazu wynosi {gestosc_na_dnie:.1f} g/l. Spodziewaj się nieco większego oporu na automacie.")
 
 
-# --- NOWOŚĆ: ANATOMIA CAŁEGO PROCESU NURKOWANIA (NORMALNY PROFIL) ---
+# --- ANATOMIA PROCESÓW (BEZ ZMIAN) ---
 st.write(" ")
 with st.expander("🔍 Zobacz anatomię CAŁEGO nurkowania (Planowany profil):"):
     st.markdown(f"""
@@ -157,13 +147,11 @@ with st.expander("🔍 Zobacz anatomię CAŁEGO nurkowania (Planowany profil):")
     *   ⏱️ **Pobyt na dnie ({czas_na_dnie} min):** {round(gaz_norm_dno)} litrów *(Zużycie stałe na maksymalnej głębokości)*
     *   📈 **Wynurzenie do strefy przystanków (do 6m):** {round(gaz_norm_wyn_glebokie)} litrów *(Czas: {((glebokosc-6)/9):.1f} min przy prędkości 9 m/min)*
     *   🛑 **Przystanek bezpieczeństwa (3 min na 6m):** {round(gaz_norm_przystanek)} litrów
-    *   ⛵ **Wynurzenie z 6m do powierzchni:** {round(gaz_norm_wyn_plytkie)} litrów *(Czas: 2 minuty bardzo wolnego wynurzania)*
+    *   👑 **Wynurzenie z 6m do powierzchni:** {round(gaz_norm_wyn_plytkie)} litrów *(Czas: 2 minuty bardzo wolnego wynurzania)*
     
     **Łącznie zużyjesz:** {round(suma_normalne_litry)} litrów gazu, co w Twojej butli przekłada się na około **{normalne_zuzycie_bar} bar**.
     """)
 
-
-# --- POWRÓT DO STAREGO ROZSTAWU DETALI DETALI AWARYJNYCH ---
 with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego (Rock Bottom):"):
     st.markdown(f"""
     Oto dokładne wyliczenie rezerwy awaryjnej na wypadek awarii partnera na maksymalnej głębokości (łączny wydatek zespołu w stresie: **{sac_awaryjne} l/min**):
@@ -175,4 +163,4 @@ with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego (Rock 
     **Razem objętość potrzebnego gazu awaryjnego:** {round(calkowity_gaz_litry)} litrów. 
     Dzieląc to przez Twoją butlę {pojemnosc_butli}L i zaokrąglając dla bezpieczeństwa w górę, otrzymujemy właśnie żelazne **{rock_bottom_bar} bar**.
     """)
-    
+
