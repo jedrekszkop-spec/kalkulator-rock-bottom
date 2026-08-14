@@ -1,4 +1,4 @@
-import streamlit st
+import streamlit as st
 import math
 
 # 1. Konfiguracja aplikacji i nazwy w oknie przeglądarki
@@ -139,7 +139,7 @@ with res_col1:
     st.metric(label="⏹️ WYMAGANY ROCK BOTTOM (Zapas na awarię)", value=f"{rock_bottom_bar} BAR", delta=f"{round(rock_bottom_litry)} litrów")
 with res_col2:
     if gaz_pozostaly_na_powrot_bar > 0:
-        st.metric(label="📉 CIŚNIENIE NA MANOMETRZE PO FAZIE DENNEJ", value=f"{gaz_pozostaly_bar} BAR", delta=f"Zużyłeś: {zuzycie_fazy_dennej_bar} bar")
+        st.metric(label="📉 CIŚNIENIE NA MANOMETRZE PO FAZIE DENNEJ", value=f"{gaz_pozostaly_na_powrot_bar} BAR", delta=f"Zużyłeś: {zuzycie_fazy_dennej_bar} bar")
     else:
         st.metric(label="📉 CIŚNIENIE NA MANOMETRZE PO FAZIE DENNEJ", value="0 BAR", delta="Gaz wyczerpany!")
 
@@ -157,7 +157,7 @@ if gestosc_na_dnie > 5.2 and glebokosc <= mod_metry:
     st.warning(f"⚠️ **Uwaga:** Gęstość gazu wynosi {gestosc_na_dnie:.1f} g/l. Spodziewaj się nieco większego oporu na automacie.")
 
 
-# --- ANATOMIA PROCESÓW (ZAKŁADKI) ---
+# --- ANATOMIA PROCESÓW ---
 st.write(" ")
 with st.expander("🔍 Zobacz anatomię CAŁEGO nurkowania (Planowany profil):"):
     st.markdown(f"""
