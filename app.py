@@ -4,8 +4,18 @@ import math
 # 1. Konfiguracja aplikacji i nazwy w oknie przeglądarki
 st.set_page_config(page_title="Ski Way Diving Machine", page_icon="🤿", layout="centered")
 
-# Nagłówek aplikacji
-st.title("🤿 Ski Way Diving Machine")
+# --- IMPLEMENTACJA OFICJALNEGO LOGOTYPU W NAGŁÓWKU (HTML/CSS) ---
+st.markdown("""
+<div style="background-color: #000000; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 25px; box-shadow: 0px 4px 15px rgba(0,0,0,0.3);">
+    <h1 style="color: #FFFFFF; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 900; letter-spacing: 6px; margin: 0; font-size: 3rem;">
+        SKIW<span style="color: #FF4B4B; font-size: 3.2rem; position: relative; top: -2px;">▲</span>Y
+    </h1>
+    <p style="color: #A0A0A0; font-family: 'Courier New', Courier, monospace; font-weight: bold; letter-spacing: 4px; margin: 5px 0 0 0; font-size: 1rem;">
+        DIVING MACHINE
+    </p>
+</div>
+""", unsafe_html=True)
+
 st.subheader("Kompletny planer profili nurkowych i limitów bezpieczeństwa")
 st.write("---")
 
@@ -28,11 +38,13 @@ opcje_butli = {
     "2x12 L (Twins)": 24
 }
 
-# Podział na TRZY zakładki dla maksymalnej przejrzystości
-tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "⏱️ Szybki Limit Czasowy", "🔬 Zaawansowane Parametry"])
+# --- ZMIENIONA KOLEJNOŚĆ: ZAKŁADKA 2 I 3 ZAMIENIONE MIEJSCAMI ---
+tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry", "⏱️ Szybki Limit Czasowy"])
 
-# --- WSTĘPNE ODZYTANIE PARAMETRÓW ZAAWANSOWANYCH (Aby były dostępne w zakładkach 1 i 2) ---
-with tab3:
+# ==========================================
+# ZAKŁADKA 2: ZAAWANSOWANE PARAMETRY (TERAZ JAKO DRUGA)
+# ==========================================
+with tab2:
     st.markdown("### Dostosuj parametry fizjologiczne")
     sac_indywidualne = st.slider("Twoje standardowe zużycie (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
 
@@ -110,9 +122,9 @@ with tab1:
 
 
 # ==========================================
-# ZAKŁADKA 2: SZYBKI LIMIT CZASOWY (NOWOŚĆ!)
+# ZAKŁADKA 3: SZYBKI LIMIT CZASOWY (TERAZ JAKO TRZECIA)
 # ==========================================
-with tab2:
+with tab3:
     st.markdown("### ⏱️ Automatyczne Wyliczanie Bezpiecznego Czasu")
     st.write("Wpisz parametry, a maszyna od razu powie Ci, na ile minut starczy Ci gazu przed wejściem na rezerwę.")
     
@@ -145,7 +157,7 @@ with tab2:
     total_awaryjny_litry_t2 = gaz_stres_t2 + gaz_wyn1_t2 + gaz_przystanek_t2 + gaz_wyn2_t2
     rock_bottom_bar_t2 = math.ceil(((total_awaryjny_litry_t2 / pojemnosc_butli_t2) + 15) / 10) * 10
 
-    # Obliczanie maksymalnego bezpiecznego czasu
+    # Obliczenie maksymalnego bezpiecznego czasu
     gaz_zan_litry_t2 = (glebokosc_t2 / 15) * sac_indywidualne * ((p_powierzchnia + p_dno_t2) / 2)
     gaz_dostepny_dno_bar_t2 = cisnienie_startowe - rock_bottom_bar_t2
     gaz_dostepny_dno_litry_t2 = gaz_dostepny_dno_bar_t2 * pojemnosc_butli_t2
@@ -194,6 +206,3 @@ with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Botto
     *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_wyn1_t1)} litrów *(Prędkość 9 m/min)*
     *   **Faza 3 (Przystanek na 6m):** {round(gaz_przystanek_t1)} litrów *(3 minuty)*
     *   **Faza 4 (Wynurzenie do powierzchni):** {round(gaz_wyn2_t1)} litrów *(2 minuty)*
-    *   🛡️ **Rezerwa końcowa:** {round(15 * pojemnosc_butli_t1)} litrów *(15 barów na powierzchni)*
-    """)
-
