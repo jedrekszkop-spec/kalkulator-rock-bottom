@@ -1,10 +1,10 @@
 import streamlit as st
 import math
 
-st.set_page_config(page_title="DeepPlan Pro – Inteligentny Asystent", page_icon="🤿", layout="centered")
+st.set_page_config(page_title="Ski Way Diving Machine", page_icon="🤿", layout="centered")
 
-st.title("🤿 DeepPlan Pro")
-st.subheader("Automatyczny planer profili i rezerw dekompresyjnych")
+st.title("🤿 Ski Way Diving Machine")
+st.subheader("Automatyczny planer profili, rezerw i limitów czasowych")
 st.write("---")
 
 tab1, tab2 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry"])
@@ -25,19 +25,13 @@ with tab1:
     st.markdown("### Krok 2: Profil Planowanego Nurkowania")
     col_prof1, col_prof2 = st.columns(2)
     with col_prof1: glebokosc = st.number_input("Planowana głębokość (metry):", 1, 50, 30, step=1)
-    with col_prof2: czas_na_dnie = st.number_input("Planowany czas na dnie (minuty):", 1, 90, 15, step=1)
+    with col_prof2: czas_na_dnie = st.number_input("Twój planowany czas na dnie (minuty):", 1, 90, 15, step=1)
 
     if glebokosc <= 10: lim_ndl = 120
     elif glebokosc <= 30: lim_ndl = 20
     else: lim_ndl = 5
 
-    if czas_na_dnie > lim_ndl:
-        czas_deco = math.ceil((czas_na_dnie - lim_ndl) * 1.5)
-        jest_w_deco = True
-    else:
-        czas_deco = 0
-        jest_w_deco = False
-
+    czas_deco = math.ceil((czas_na_dnie - lim_ndl) * 1.5) if czas_na_dnie > lim_ndl else 0
     cisnienie_startowe = 200
     gestosc_na_dnie = 1.29 * ((glebokosc / 10) + 1)
 
@@ -47,7 +41,7 @@ with tab2:
     ppo2_custom = st.slider("Limit ciśnienia parcjalnego tlenu (PPO₂):", 1.2, 1.6, 1.4, 0.1)
     mod_metry = (ppo2_custom / fo2 - 1) * 10
 
-# --- SILNIK OBLICZENIOWY ---
+# --- AUTOMATYCZNY SILNIK OBLICZENIOWY ---
 sac_awaryjne = sac_indywidualne * 2
 p_dno = (glebokosc / 10) + 1
 p_przystanek = (6 / 10) + 1
@@ -62,8 +56,13 @@ calkowity_gaz_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_p
 rock_bottom_bar = math.ceil((calkowity_gaz_litry / pojemnosc_butli) / 10) * 10
 dostepny_gaz_bar = cisnienie_startowe - rock_bottom_bar
 
+zuzycie_denne_bar_min = (sac_indywidualne * p_dno) / pojemnosc_butli
+maks_czas_na_dnie = math.floor(dostepny_gaz_bar / zuzycie_denne_bar_min) if dostepny_gaz_bar > 0 else 0
+planowane_zuzycie_bar = math.ceil(czas_na_dnie * zuzycie_denne_bar_min)
+turn_pressure_bar = max(rock_bottom_bar, cisnienie_startowe - planowane_zuzycie_bar)
+
 st.write("---")
 st.markdown("### 📊 Raport Bezpieczeństwa Profilu:")
 res_col1, res_col2 = st.columns(2)
-res_col1.metric("🚨 ROCK BOTTOM", f"{rock_bottom_bar} BAR")
-res_col2.metric("🟢 GAZ NA FAZĘ DENNĄ", f"{dostepny_gaz_bar} BAR" if dostepny_gaz_bar > 0 else "BRAK")
+res_col1.metric("🚨 BEZWZGLĘDNY ROCK BOTTOM", f"{rock_bottom_bar} BAR")
+res_col2.metric("⏱️ MAKSYMALNY CZAS NA DNIE", f"{maks_czas_na_dnie} MIN")
