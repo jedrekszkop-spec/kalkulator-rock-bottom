@@ -4,7 +4,7 @@ import math
 # 1. Konfiguracja aplikacji i nazwy w oknie przeglądarki
 st.set_page_config(page_title="Ski Way Diving Machine", page_icon="🤿", layout="centered")
 
-# --- IMPLEMENTACJA OFICJALNEGO LOGOTYPU W NAGŁÓWKU (HTML/CSS) ---
+# --- NOWOŚĆ: IMPLEMENTACJA OFICJALNEGO LOGOTYPU W NAGŁÓWKU (HTML/CSS) ---
 st.markdown("""
 <div style="background-color: #000000; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 25px; box-shadow: 0px 4px 15px rgba(0,0,0,0.3);">
     <h1 style="color: #FFFFFF; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 900; letter-spacing: 6px; margin: 0; font-size: 3rem;">
@@ -38,13 +38,11 @@ opcje_butli = {
     "2x12 L (Twins)": 24
 }
 
-# --- ZMIENIONA KOLEJNOŚĆ: ZAKŁADKA 2 I 3 ZAMIENIONE MIEJSCAMI ---
-tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry", "⏱️ Szybki Limit Czasowy"])
+# Podział na TRZY zakładki
+tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "⏱️ Szybki Limit Czasowy", "🔬 Zaawansowane Parametry"])
 
-# ==========================================
-# ZAKŁADKA 2: ZAAWANSOWANE PARAMETRY (TERAZ JAKO DRUGA)
-# ==========================================
-with tab2:
+# Odczyt parametrów zaawansowanych
+with tab3:
     st.markdown("### Dostosuj parametry fizjologiczne")
     sac_indywidualne = st.slider("Twoje standardowe zużycie (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
 
@@ -122,9 +120,9 @@ with tab1:
 
 
 # ==========================================
-# ZAKŁADKA 3: SZYBKI LIMIT CZASOWY (TERAZ JAKO TRZECIA)
+# ZAKŁADKA 2: SZYBKI LIMIT CZASOWY
 # ==========================================
-with tab3:
+with tab2:
     st.markdown("### ⏱️ Automatyczne Wyliczanie Bezpiecznego Czasu")
     st.write("Wpisz parametry, a maszyna od razu powie Ci, na ile minut starczy Ci gazu przed wejściem na rezerwę.")
     
@@ -206,3 +204,6 @@ with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Botto
     *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_wyn1_t1)} litrów *(Prędkość 9 m/min)*
     *   **Faza 3 (Przystanek na 6m):** {round(gaz_przystanek_t1)} litrów *(3 minuty)*
     *   **Faza 4 (Wynurzenie do powierzchni):** {round(gaz_wyn2_t1)} litrów *(2 minuty)*
+    *   🛡️ **Rezerwa końcowa:** {round(15 * pojemnosc_butli_t1)} litrów *(15 barów na powierzchni)*
+    """)
+
