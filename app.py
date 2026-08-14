@@ -47,7 +47,7 @@ with tab1:
     else:
         fo2 = 0.21
 
-    # --- FUNKCJA MOD (Stałe PPO2 = 1.6 zgodnie z wytycznymi) ---
+    # --- FUNKCJA MOD (Stałe PPO2 = 1.6) ---
     ppo2_limit = 1.6
     mod_metry = (ppo2_limit / fo2 - 1) * 10
 
@@ -61,16 +61,19 @@ with tab1:
     
     col_prof1, col_prof2 = st.columns(2)
     with col_prof1:
-        glebokosc = st.number_input("Planowana głębokość (metry):", min_value=1, max_value=50, value=30, step=1)
+        # Twardy limit do maksymalnie 100 metrów
+        glebokosc = st.number_input("Planowana głębokość (metry):", min_value=1, max_value=100, value=30, step=1)
+        st.caption("*(Maksymalna głębokość możliwa do wybrania: 100 m)*")
     with col_prof2:
-        czas_na_dnie = st.number_input("Planowany czas na dnie (minuty):", min_value=1, max_value=90, value=15, step=1)
+        # Twardy limit do maksymalnie 60 minut
+        czas_na_dnie = st.number_input("Planowany czas na dnie (minuty):", min_value=1, max_value=60, value=15, step=1)
+        st.caption("*(Maksymalny czas możliwy do wybrania: 60 min)*")
 
     cisnienie_startowe = 200
     gestosc_na_dnie = 1.29 * ((glebokosc / 10) + 1)
 
 with tab2:
     st.markdown("### Dostosuj parametry fizjologiczne")
-    # Zostawiamy tylko SAC nurka, suwak PPO2 został usunięty na rzecz stałego 1.6
     sac_indywidualne = st.slider("Twoje standardowe zużycie (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
 
 # --- MATEMATYKA FIZYCZNA PROFILU NURKOWANIA ---
@@ -116,11 +119,9 @@ gaz_faza_przystanek = 3 * sac_awaryjne * p_przystanek
 p_sr_faza2 = (p_przystanek + p_powierzchnia) / 2
 gaz_faza_wynurzanie_plytkie = 2 * sac_awaryjne * p_sr_faza2
 
-# Suma litrów czystego powrotu awaryjnego
 calkowity_gaz_awaryjny_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
 czysty_powrot_bar = calkowity_gaz_awaryjny_litry / pojemnosc_butli
 
-# Rock Bottom = Czysty powrót + ZAOŁOŻENIE 15 BAR na powierzchni (zaokrąglone w górę do pełnych 10 bar)
 rock_bottom_bar = math.ceil((czysty_powrot_bar + 15) / 10) * 10
 rock_bottom_litry = rock_bottom_bar * pojemnosc_butli
 
@@ -139,11 +140,11 @@ with res_col1:
 with res_col2:
     st.metric(label="⏱️ ZUŻYCIE PLANOWANE (Twoja faza)", value=f"{normalne_zuzycie_bar} BAR", delta=f"{round(suma_normalne_litry)} litrów")
 
-# Wytyczne i alerty dla nurka
+# Łagodne, profesjonalne ostrzeżenia zamiast kategorycznych zakazów
 if glebokosc > mod_metry:
-    st.error(f"❌ **ZAKAZ NURKOWANIA (ALARM MOD):** Planowana głębokość ({glebokosc}m) przekracza maksymalną bezpieczną granicę operacyjną ({mod_metry:.1f} m) dla tej mieszanki przy krytycznym $PPO_2 = 1.6$!")
+    st.warning(f"⚠️ **OSTRZEŻENIE O ZAGROŻENIU (MOD):** Planowana głębokość ({glebokosc}m) przekracza maksymalną granicę operacyjną ({mod_metry:.1f} m) dla tej mieszanki! Pojawia się ryzyko toksyczności tlenowej.")
 elif calkowity_wymagany_gaz_bar > cisnienie_startowe:
-    st.error(f"❌ **ZAKAZ NURKOWANIA:** Twój plan przekracza fizyczną pojemność butli 200 bar!")
+    st.warning(f"⚠️ **PLAN PODWYŻSZONEGO RYZYKA:** Łączne zapotrzebowanie na fazę denną oraz żelazną rezerwę przekracza standardową pojemność butli 200 bar. Zastanów się nad większą butlą lub skróceniem czasu.")
 else:
     st.success(f"👉 **Wytyczne:** Wchodzisz z 200 bar. Gdy Twój manometr wskaże **{rock_bottom_bar} bar** – natychmiast wracasz na powierzchnię. Po przejściu całej procedury awaryjnej z partnerem, na powierzchni manometr pokaże bezpieczne **minimum 15 barów** pozwalające na swobodny oddech.")
 
