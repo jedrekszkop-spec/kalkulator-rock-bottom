@@ -12,7 +12,8 @@ st.write("---")
 # --- SKRÓCONA DEFINICJA NA GÓRZE ---
 st.markdown("""
 ### 🧠 Czym jest Rock Bottom?
-**Rock Bottom (Żelazna Rezerwa)** to krytyczne ciśnienie w butli, przy którym należy natychmiast rozpocząć wspólne wynurzanie z partnerem oddychającym z Twojego zapasowego automatu w sytuacji awaryjnej.
+**Rock Bottom (Żelazna Rezerwa)** to krytyczne ciśnienie w butli, przy którym należy natychmiast rozpocząć wspólne wynurzanie z partnerem. 
+*Algorytm Ski Way wylicza tę wartość tak, aby po przejściu całej procedury awaryjnej i wyjściu na powierzchnię, w Twojej butli zostało jeszcze bezpieczne **50 barów rezerwy końcowej**.*
 """)
 st.write("---")
 
@@ -108,37 +109,42 @@ gaz_faza_przystanek = 3 * sac_awaryjne * p_przystanek
 p_sr_faza2 = (p_przystanek + p_powierzchnia) / 2
 gaz_faza_wynurzanie_plytkie = 2 * sac_awaryjne * p_sr_faza2
 
-calkowity_gaz_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
-rock_bottom_bar = math.ceil((calkowity_gaz_litry / pojemnosc_butli) / 10) * 10
+# Suma litrów czystego powrotu awaryjnego
+calkowity_gaz_awaryjny_litry = gaz_faza_stres + gaz_faza_wynurzanie_glebokie + gaz_faza_przystanek + gaz_faza_wynurzanie_plytkie
+czysty_powrot_bar = calkowity_gaz_awaryjny_litry / pojemnosc_butli
+
+# NOWA LOGIKA: Rock Bottom = Czysty powrót + 50 bar rezerwy na powierzchni (zaokrąglone w górę do pełnych 10 bar)
+rock_bottom_bar = math.ceil((czysty_powrot_bar + 50) / 10) * 10
+rock_bottom_litry = rock_bottom_bar * pojemnosc_butli
 
 calkowity_wymagany_gaz_bar = normalne_zuzycie_bar + rock_bottom_bar
 pozostale_cisnienie_wyjsciowe = cisnienie_startowe - normalne_zuzycie_bar
 
 
-# --- 🔘 NOWA SEKCA WYNIKÓW: KONSOLA STERUJĄCA SKI WAY ---
+# --- 🔘 KONSOLA STERUJĄCA SKI WAY ---
 st.write("---")
-st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
+st.markdown("### 🎛 shrink Parametry Wyjściowe (Konsola Ski Way):")
 
-# Nowe, prostsze nazwy w kafelkach wynikowych
+# Wyświetlanie barów i litrów jednocześnie w kafelkach
 res_col1, res_col2 = st.columns(2)
 with res_col1:
-    st.metric(label="⏹️ GRANICA POWROTU (Górny limit awaryjny)", value=f"{rock_bottom_bar} BAR")
+    st.metric(label="⏹️ GRANICA POWROTU (Rock Bottom)", value=f"{rock_bottom_bar} BAR", delta=f"{round(rock_bottom_litry)} litrów")
 with res_col2:
-    st.metric(label="⏱️ ZUŻYCIE PLANOWANE (Twoja faza)", value=f"{normalne_zuzycie_bar} BAR")
+    st.metric(label="⏱️ ZUŻYCIE PLANOWANE (Profil solo)", value=f"{normalne_zuzycie_bar} BAR", delta=f"{round(suma_normalne_litry)} litrów")
 
-# Czyste, żołnierskie instrukcje zamiast nudnych komunikatów
+# Wytyczne i alerty dla nurka
 if glebokosc > mod_metry:
     st.error(f"❌ **ZAKAZ NURKOWANIA:** Przekroczono bezpieczną głębokość tlenową MOD ({mod_metry:.1f} m)!")
 elif calkowity_wymagany_gaz_bar > cisnienie_startowe:
-    st.error(f"❌ **ZAKAZ NURKOWANIA:** Twój plan przekracza fizyczną pojemność butli 200 bar!")
+    st.error(f"❌ **ZAKAZ NURKOWANIA:** Twój plan przekracza fizyczną pojemność butli 200 bar przy zachowaniu rezerwy końcowej!")
 else:
-    st.success(f"👉 **Wytyczne:** Wchodzisz z 200 bar. Twoje planowane zużycie to {normalne_zuzycie_bar} bar. Jeśli na manometrze zobaczysz **{rock_bottom_bar} bar** – natychmiast wracasz na powierzchnię razem z partnerem.")
+    st.success(f"👉 **Wytyczne:** Wchodzisz z 200 bar. Gdy Twój manometr wskaże **{rock_bottom_bar} bar** – natychmiast wracasz na powierzchnię. Po udanym wynurzeniu z partnerem, w butli zostanie Ci jeszcze przepisowe **ok. 50-60 barów** rezerwy.")
 
 if gestosc_na_dnie > 5.2 and glebokosc <= mod_metry:
     st.warning(f"⚠️ **Uwaga:** Gęstość gazu wynosi {gestosc_na_dnie:.1f} g/l. Spodziewaj się nieco większego oporu na automacie.")
 
 
-# --- ANATOMIA PROCESÓW (BEZ ZMIAN) ---
+# --- ANATOMIA PROCESÓW (ZAKŁADKI) ---
 st.write(" ")
 with st.expander("🔍 Zobacz anatomię CAŁEGO nurkowania (Planowany profil):"):
     st.markdown(f"""
@@ -159,8 +165,8 @@ with st.expander("🔍 Zobacz szczegółową anatomię powrotu awaryjnego (Rock 
     *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_faza_wynurzanie_glebokie)} litrów *(Czas wynurzania: {((glebokosc-6)/9):.1f} min przy prędkości 9 m/min)*
     *   **Faza 3 (Przystanek na 6m):** {round(gaz_faza_przystanek)} litrów *(Czas: 3 minuty przystanku bezpieczeństwa dla dwóch osób)*
     *   **Faza 4 (Wynurzenie z 6m do powierzchni):** {round(gaz_faza_wynurzanie_plytkie)} litrów *(Czas: 2 minuty bardzo powolnego kontrolowanego wynurzania)*
+    *   🛡️ **Nienaruszalna rezerwa końcowa:** 750 litrów *(Zawsze równe **50 barów**, które MUSZĄ zostać w butli 15L po wynurzeniu)*
     
-    **Razem objętość potrzebnego gazu awaryjnego:** {round(calkowity_gaz_litry)} litrów. 
-    Dzieląc to przez Twoją butlę {pojemnosc_butli}L i zaokrąglając dla bezpieczeństwa w górę, otrzymujemy właśnie żelazne **{rock_bottom_bar} bar**.
+    **Łącznie zabezpieczony gaz awaryjny:** {round(calkowity_gaz_awaryjny_litry + 750)} litrów. 
+    Dzieląc to przez Twoją butlę {pojemnosc_butli}L i zaokrąglając dla bezpieczeństwa w górę, otrzymujemy właśnie bezpieczne **{rock_bottom_bar} bar**.
     """)
-
