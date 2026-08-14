@@ -38,7 +38,7 @@ opcje_butli = {
     "2x12 L (Twins)": 24
 }
 
-# --- USTALONA KOLEJNOŚĆ ZAKŁADEK ---
+# Poprawna, ustalona kolejność trzech zakładek
 tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry", "⏱️ Szybki Limit Czasowy"])
 
 # ==========================================
@@ -92,7 +92,7 @@ with tab1:
     gaz_zan_t1 = (glebokosc_t1 / 15) * sac_indywidualne * p_sr_zan_t1
     gaz_dno_t1 = czas_na_dnie_t1 * sac_indywidualne * p_dno_t1
     
-    # Przeliczenie samego zanurzenia na bary
+    # Przeliczenie kosztu samego zanurzenia na bary
     zuzycie_zanurzenia_bar_t1 = math.ceil(gaz_zan_t1 / pojemnosc_butli_t1)
     
     zuzycie_denne_bar_t1 = math.ceil((gaz_zan_t1 + gaz_dno_t1) / pojemnosc_butli_t1)
@@ -108,7 +108,7 @@ with tab1:
     total_awaryjny_litry_t1 = gaz_stres_t1 + gaz_wyn1_t1 + gaz_przystanek_t1 + gaz_wyn2_t1
     rock_bottom_bar_t1 = math.ceil(((total_awaryjny_litry_t1 / pojemnosc_butli_t1) + 15) / 10) * 10
 
-    # Wyniki Tab 1 (Podział na 3 kolumny)
+    # Wyniki Tab 1 (Zoptymalizowany podział na 3 kolumny z gazem na zanurzenie)
     st.write("---")
     st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
     r_col1, r_col2, r_col3 = st.columns(3)
@@ -119,8 +119,9 @@ with tab1:
     with r_col3:
         st.metric(label="📉 MANOMETR PO DNIE", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR")
 
+    # Łagodne, partnerskie ostrzeżenia
     if glebokosc_t1 > mod_t1:
-        st.warning(f"⚠️ **OSTRZEŻENIE (MOD):** Głębokość przekracza MOD ({mod_t1:.1f} m)!")
+        st.warning(f"⚠️ **OSTRZEŻENIE (MOD):** Głębokość przekracza bezpieczną granicę operacyjną ({mod_t1:.1f} m) dla tej mieszanki!")
     elif gaz_pozostaly_bar_t1 < rock_bottom_bar_t1:
         st.warning(f"⚠️ **PLAN PODWYŻSZONEGO RYZYKA:** Na dnie zostanie Ci za mało gazu awaryjnego ({gaz_pozostaly_bar_t1} bar vs {rock_bottom_bar_t1} bar Rock Bottom)!")
     else:
@@ -206,7 +207,3 @@ with st.expander("Zobacz anatomię CAŁEGO nurkowania (Planowany profil solo):")
     *   **Łącznie faza denna:** {round(gaz_zan_t1 + gaz_dno_t1)} litrów (~{zuzycie_denne_bar_t1} bar).
     """)
 
-with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Bottom):"):
-    st.markdown(f"""
-    *   **Faza 1 (Stres na dnie):** {round(gaz_stres_t1)} litrów *(2 minuty)*
-    *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_wyn1_t1)} litrów *(Prędkość 9 m/min)*
