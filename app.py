@@ -38,11 +38,11 @@ opcje_butli = {
     "2x12 L (Twins)": 24
 }
 
-# --- ZMIENIONA KOLEJNOŚĆ: ZAKŁADKA 2 I 3 ZAMIENIONE MIEJSCAMI ---
+# --- USTALONA KOLEJNOŚĆ ZAKŁADEK ---
 tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry", "⏱️ Szybki Limit Czasowy"])
 
 # ==========================================
-# ZAKŁADKA 2: ZAAWANSOWANE PARAMETRY (TERAZ JAKO DRUGA)
+# ZAKŁADKA 2: ZAAWANSOWANE PARAMETRY
 # ==========================================
 with tab2:
     st.markdown("### Dostosuj parametry fizjologiczne")
@@ -91,6 +91,10 @@ with tab1:
     p_sr_zan_t1 = (p_powierzchnia + p_dno_t1) / 2
     gaz_zan_t1 = (glebokosc_t1 / 15) * sac_indywidualne * p_sr_zan_t1
     gaz_dno_t1 = czas_na_dnie_t1 * sac_indywidualne * p_dno_t1
+    
+    # Przeliczenie samego zanurzenia na bary
+    zuzycie_zanurzenia_bar_t1 = math.ceil(gaz_zan_t1 / pojemnosc_butli_t1)
+    
     zuzycie_denne_bar_t1 = math.ceil((gaz_zan_t1 + gaz_dno_t1) / pojemnosc_butli_t1)
     gaz_pozostaly_bar_t1 = cisnienie_startowe - zuzycie_denne_bar_t1
 
@@ -104,14 +108,16 @@ with tab1:
     total_awaryjny_litry_t1 = gaz_stres_t1 + gaz_wyn1_t1 + gaz_przystanek_t1 + gaz_wyn2_t1
     rock_bottom_bar_t1 = math.ceil(((total_awaryjny_litry_t1 / pojemnosc_butli_t1) + 15) / 10) * 10
 
-    # Wyniki Tab 1
+    # Wyniki Tab 1 (Podział na 3 kolumny)
     st.write("---")
     st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
-    r_col1, r_col2 = st.columns(2)
+    r_col1, r_col2, r_col3 = st.columns(3)
     with r_col1:
         st.metric(label="⏹️ WYMAGANY ROCK BOTTOM", value=f"{rock_bottom_bar_t1} BAR")
     with r_col2:
-        st.metric(label="📉 MANOMETR PO FAZIE DENNEJ", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR")
+        st.metric(label="📉 SAMO ZANURZENIE (Koszt)", value=f"{zuzycie_zanurzenia_bar_t1} BAR", delta=f"{round(gaz_zan_t1)} litrów", delta_color="inverse")
+    with r_col3:
+        st.metric(label="📉 MANOMETR PO DNIE", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR")
 
     if glebokosc_t1 > mod_t1:
         st.warning(f"⚠️ **OSTRZEŻENIE (MOD):** Głębokość przekracza MOD ({mod_t1:.1f} m)!")
@@ -122,7 +128,7 @@ with tab1:
 
 
 # ==========================================
-# ZAKŁADKA 3: SZYBKI LIMIT CZASOWY (TERAZ JAKO TRZECIA)
+# ZAKŁADKA 3: SZYBKI LIMIT CZASOWY
 # ==========================================
 with tab3:
     st.markdown("### ⏱️ Automatyczne Wyliczanie Bezpiecznego Czasu")
@@ -204,5 +210,3 @@ with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Botto
     st.markdown(f"""
     *   **Faza 1 (Stres na dnie):** {round(gaz_stres_t1)} litrów *(2 minuty)*
     *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_wyn1_t1)} litrów *(Prędkość 9 m/min)*
-    *   **Faza 3 (Przystanek na 6m):** {round(gaz_przystanek_t1)} litrów *(3 minuty)*
-    *   **Faza 4 (Wynurzenie do powierzchni):** {round(gaz_wyn2_t1)} litrów *(2 minuty)*
