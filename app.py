@@ -201,5 +201,4 @@ with st.expander("Zobacz anatomię CAŁEGO nurkowania (Planowany profil solo):")
     """)
 
 with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Bottom):"):
-    st.markdown(f"""
     *   **Faza 1 (Stres na dnie):** {round(gaz_stres_t1)} litrów *(2 minuty)*
