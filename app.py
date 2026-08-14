@@ -4,7 +4,7 @@ import math
 # 1. Konfiguracja aplikacji i nazwy w oknie przeglądarki
 st.set_page_config(page_title="Ski Way Diving Machine", page_icon="🤿", layout="centered")
 
-# --- NOWOŚĆ: IMPLEMENTACJA OFICJALNEGO LOGOTYPU W NAGŁÓWKU (HTML/CSS) ---
+# --- IMPLEMENTACJA OFICJALNEGO LOGOTYPU W NAGŁÓWKU (HTML/CSS) ---
 st.markdown("""
 <div style="background-color: #000000; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 25px; box-shadow: 0px 4px 15px rgba(0,0,0,0.3);">
     <h1 style="color: #FFFFFF; font-family: 'Helvetica Neue', Arial, sans-serif; font-weight: 900; letter-spacing: 6px; margin: 0; font-size: 3rem;">
@@ -38,11 +38,13 @@ opcje_butli = {
     "2x12 L (Twins)": 24
 }
 
-# Podział na TRZY zakładki
-tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "⏱️ Szybki Limit Czasowy", "🔬 Zaawansowane Parametry"])
+# Poprawna, ustalona kolejność trzech zakładek
+tab1, tab2, tab3 = st.tabs(["📋 Planowanie Nurkowania", "🔬 Zaawansowane Parametry", "⏱️ Szybki Limit Czasowy"])
 
-# Odczyt parametrów zaawansowanych
-with tab3:
+# ==========================================
+# ZAKŁADKA 2: ZAAWANSOWANE PARAMETRY
+# ==========================================
+with tab2:
     st.markdown("### Dostosuj parametry fizjologiczne")
     sac_indywidualne = st.slider("Twoje standardowe zużycie (SAC) [l/min]:", min_value=10, max_value=30, value=20, step=1)
 
@@ -89,6 +91,10 @@ with tab1:
     p_sr_zan_t1 = (p_powierzchnia + p_dno_t1) / 2
     gaz_zan_t1 = (glebokosc_t1 / 15) * sac_indywidualne * p_sr_zan_t1
     gaz_dno_t1 = czas_na_dnie_t1 * sac_indywidualne * p_dno_t1
+    
+    # Przeliczenie kosztu samego zanurzenia na bary
+    zuzycie_zanurzenia_bar_t1 = math.ceil(gaz_zan_t1 / pojemnosc_butli_t1)
+    
     zuzycie_denne_bar_t1 = math.ceil((gaz_zan_t1 + gaz_dno_t1) / pojemnosc_butli_t1)
     gaz_pozostaly_bar_t1 = cisnienie_startowe - zuzycie_denne_bar_t1
 
@@ -102,17 +108,20 @@ with tab1:
     total_awaryjny_litry_t1 = gaz_stres_t1 + gaz_wyn1_t1 + gaz_przystanek_t1 + gaz_wyn2_t1
     rock_bottom_bar_t1 = math.ceil(((total_awaryjny_litry_t1 / pojemnosc_butli_t1) + 15) / 10) * 10
 
-    # Wyniki Tab 1
+    # Wyniki Tab 1 (Zoptymalizowany podział na 3 kolumny z gazem na zanurzenie)
     st.write("---")
     st.markdown("### 🎛️ Parametry Wyjściowe (Konsola Ski Way):")
-    r_col1, r_col2 = st.columns(2)
+    r_col1, r_col2, r_col3 = st.columns(3)
     with r_col1:
         st.metric(label="⏹️ WYMAGANY ROCK BOTTOM", value=f"{rock_bottom_bar_t1} BAR")
     with r_col2:
-        st.metric(label="📉 MANOMETR PO FAZIE DENNEJ", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR")
+        st.metric(label="📉 SAMO ZANURZENIE (Koszt)", value=f"{zuzycie_zanurzenia_bar_t1} BAR", delta=f"{round(gaz_zan_t1)} litrów", delta_color="inverse")
+    with r_col3:
+        st.metric(label="📉 MANOMETR PO DNIE", value=f"{max(0, gaz_pozostaly_bar_t1)} BAR")
 
+    # Łagodne, partnerskie ostrzeżenia
     if glebokosc_t1 > mod_t1:
-        st.warning(f"⚠️ **OSTRZEŻENIE (MOD):** Głębokość przekracza MOD ({mod_t1:.1f} m)!")
+        st.warning(f"⚠️ **OSTRZEŻENIE (MOD):** Głębokość przekracza bezpieczną granicę operacyjną ({mod_t1:.1f} m) dla tej mieszanki!")
     elif gaz_pozostaly_bar_t1 < rock_bottom_bar_t1:
         st.warning(f"⚠️ **PLAN PODWYŻSZONEGO RYZYKA:** Na dnie zostanie Ci za mało gazu awaryjnego ({gaz_pozostaly_bar_t1} bar vs {rock_bottom_bar_t1} bar Rock Bottom)!")
     else:
@@ -120,9 +129,9 @@ with tab1:
 
 
 # ==========================================
-# ZAKŁADKA 2: SZYBKI LIMIT CZASOWY
+# ZAKŁADKA 3: SZYBKI LIMIT CZASOWY
 # ==========================================
-with tab2:
+with tab3:
     st.markdown("### ⏱️ Automatyczne Wyliczanie Bezpiecznego Czasu")
     st.write("Wpisz parametry, a maszyna od razu powie Ci, na ile minut starczy Ci gazu przed wejściem na rezerwę.")
     
@@ -196,14 +205,5 @@ with st.expander("Zobacz anatomię CAŁEGO nurkowania (Planowany profil solo):")
     *   📉 **Zanurzenie na {glebokosc_t1}m:** {round(gaz_zan_t1)} litrów
     *   ⏱️ **Pobyt na dnie ({czas_na_dnie_t1} min):** {round(gaz_dno_t1)} litrów
     *   **Łącznie faza denna:** {round(gaz_zan_t1 + gaz_dno_t1)} litrów (~{zuzycie_denne_bar_t1} bar).
-    """)
-
-with st.expander("Zobacz szczegółową anatomię powrotu awaryjnego (Rock Bottom):"):
-    st.markdown(f"""
-    *   **Faza 1 (Stres na dnie):** {round(gaz_stres_t1)} litrów *(2 minuty)*
-    *   **Faza 2 (Wynurzenie do 6m):** {round(gaz_wyn1_t1)} litrów *(Prędkość 9 m/min)*
-    *   **Faza 3 (Przystanek na 6m):** {round(gaz_przystanek_t1)} litrów *(3 minuty)*
-    *   **Faza 4 (Wynurzenie do powierzchni):** {round(gaz_wyn2_t1)} litrów *(2 minuty)*
-    *   🛡️ **Rezerwa końcowa:** {round(15 * pojemnosc_butli_t1)} litrów *(15 barów na powierzchni)*
     """)
 
